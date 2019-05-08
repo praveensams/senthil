@@ -1,0 +1,51 @@
+- hosts: repo
+  become: true
+  vars:
+    - "packs": ['httpd','httpd-tools']
+
+  tasks:
+
+    - name: installing packages
+      yum:
+        name: "{{ packs }}"
+        state: "installed"
+
+    - name: running in the blocks
+      block:
+        - name: copynig the configuration file to conf location 
+          template:
+            src: "httpd.conf.j2"
+            dest: "/etc/httpd/conf/httpd.conf"
+          notify: "restarts"
+      rescue:
+        - name: disabling selinux
+          selinux:
+            state: disabled
+          notify: "restarts" 
+     
+    - name: copying the index.html
+      copy:
+        src: "index.html"
+        dest: "/var/www/html/index.html"
+
+    - name: running in the blocks
+      block:
+        - name: service starts
+          service:
+            name: "httpd"
+            state: "started"
+          ignore_errors: yes
+      rescue:
+        - name: disabling selinux
+          selinux:
+            state: disabled
+          notify: "restarts" 
+      
+
+        
+
+  handlers:
+    - name: restarts
+      service:
+         name: "httpd"
+         state: "restarted"

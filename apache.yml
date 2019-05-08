@@ -1,0 +1,35 @@
+- hosts: repo
+  become: true
+  vars:
+    - "packs": ['httpd','httpd-tools']
+
+  tasks:
+
+    - name: installing packages
+      yum:
+        name: "{{ packs }}"
+        state: "installed"
+
+    - name: copying the conf file
+      copy:
+        src: "httpd.conf"
+        dest: "/etc/httpd/conf/httpd.conf"
+      notify: "restarts"
+
+    - name: copying the index.html
+      copy:
+        src: "index.html"
+        dest: "/var/www/html/index.html"
+
+    - name: service starts
+      service:
+        name: "httpd"
+        state: "started"
+
+        
+
+  handlers:
+    - name: restarts
+      service:
+         name: "httpd"
+         state: "restarted"
